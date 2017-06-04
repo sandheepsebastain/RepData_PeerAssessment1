@@ -8,18 +8,120 @@ output:
 
 ## Loading and preprocessing the data
 
+Reading the file in and converting the Date column into date format. 
+Also adding Day names column and a Day type column. A sample of the processed data is shown below.
 
+```{r processingdata,echo=TRUE,}
+actdata<-read.csv("activity.csv")
+actdata$date<-as.Date(actdata$date , format="%Y-%m-%d")
+actdata$day = strftime(actdata$date,'%A')
+weekdayslist <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+actdata$DayType <- factor((weekdays(actdata$date) %in% weekdayslist), 
+                   levels=c(FALSE, TRUE), labels=c('weekend', 'weekday')) 
+print(head(actdata))
+```
 
 ## What is mean total number of steps taken per day?
+1. Caluclating the total number of steps per day. A sample of the data is shown below.
 
+```{r meantotalstepsperday,echo=TRUE}
+datatotalstepsperday<-aggregate(actdata$steps,by=list(actdata$date),FUN=sum,na.rm = TRUE)
+names(datatotalstepsperday)<-c("date","Total_Steps_Day")
+print(head(datatotalstepsperday))
+```
+2. Histogram of the total number of steps taken each day
+
+```{r histogramtotnosteps,echo=TRUE,tidy=FALSE}
+histdata=hist(datatotalstepsperday$Total_Steps_Day,xlab = "Total Steps per day",main = "Histogram Total Steps Per day (missing data)", col="red")
+```
+
+3.1 The mean total number of steps each day
+
+```{r meantotnostepsperday,echo=TRUE}
+dataavgstepsperday<-aggregate(actdata$steps,by=list(actdata$date),FUN=mean,na.rm = TRUE)
+names(dataavgstepsperday)<-c("date","Avg_Steps_Day")
+meantotstepsperday<-as.integer(mean(datatotalstepsperday$Total_Steps_Day,na.rm = TRUE))
+print(dataavgstepsperday)
+```
+
+3.2 The median total number of steps each day
+
+```{r mediantotnostepsperday,echo=TRUE}
+datamedianstepsperday<-aggregate(actdata$steps,by=list(actdata$date),FUN=median,na.rm = TRUE)
+names(datamedianstepsperday)<-c("date","Median_Steps_Day")
+print(datamedianstepsperday)
+```
+
+The mean total number of steps per day through the entire dataset is `r meantotstepsperday`.
 
 
 ## What is the average daily activity pattern?
+1. Time series plot of 5 minute interval and the avegae number of steps taken, averaged across all days
+```{r avgstepstakenperinterval,echo=TRUE}
+dataavgstepsperinterval<-aggregate(actdata$steps,by=list(actdata$interval),FUN=mean,na.rm=TRUE)
+names(dataavgstepsperinterval)<-c("Interval","Avg_Steps_Interval")
+maxinterval<-dataavgstepsperinterval$Interval[apply(dataavgstepsperinterval,2,which.max)][1]
+maxintervalvalue=dataavgstepsperinterval$Interval[apply(dataavgstepsperinterval,2,which.max)][2]
 
+plot(dataavgstepsperinterval,type="l",xlab="5 minute intervals", ylab="Avergage no. of steps",main="Average daily 
+     activity pattern",col="red")
+```
+
+2. Five minute interval that on an average contains maximum number of steps is `r maxinterval` and the value is `r maxintervalvalue` steps
 
 
 ## Imputing missing values
+1. Total number of NAs in the dataset
 
+```{r,echo=TRUE}
+rowNAs<-sum(is.na(actdata$steps))
+print(rowNAs)
+```
 
+2/3. Filling NAs with the average number of steps corresponding to that interval. A sample of the filled dataset is shown below
+
+```{r,echo=TRUE}
+library(plyr)
+actdataFilled<-actdata
+imputemissingvalues<-function(steps) replace(steps,is.na(steps),mean(steps, na.rm = TRUE))
+actdataFilled <- ddply(actdataFilled, ~ interval, transform, steps = imputemissingvalues(steps))
+print(head(actdataFilled))
+```
+
+4. Histogram of the total number of steps taken each day
+
+```{r,echo=TRUE}
+datatotalstepsperdayFilled<-aggregate(actdataFilled$steps,by=list(actdataFilled$date),FUN=sum)
+names(datatotalstepsperdayFilled)<-c("date","Total_Steps_Day")
+
+dataavgstepsperdayFilled<-aggregate(actdataFilled$steps,by=list(actdataFilled$date),FUN=mean)
+names(dataavgstepsperdayFilled)<-c("date","Average_Steps_Day")
+
+datamedianstepsperdayFilled<-aggregate(actdataFilled$steps,by=list(actdataFilled$date),FUN=median)
+names(datamedianstepsperdayFilled)<-c("date","Median_Steps_Day")
+
+histFilled=hist(datatotalstepsperdayFilled$Total_Steps_Day,xlab = "Total Steps per day",main = "Histogram Total Steps Per day (imputed data)",col="blue")
+```
+
+By filling in the missing values, the total steps per day have increased, so there are more days having the mean number of steps.
+
+```{r,echo=TRUE}
+library(lattice)
+datatotalstepsperdayFilled$Type="Imputed Data"
+datatotalstepsperday$Type="Missing Data"
+combindeddata=rbind(datatotalstepsperdayFilled,datatotalstepsperday)
+x_breaks <- c(0,5000 , 10000, 15000, 20000,25000)
+histogram(~ Total_Steps_Day | Type, data=combindeddata,breaks = x_breaks,xlab ="Total Steps per day", ylab="Frequency" )
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Line chart showing the average steps taken during each interval during a weekday and a weekend. The lot shows that the peak number of steps during weekdays is higher than during weekends. Also during weekdays the activity levels start earlier in the day than during weekends.
+
+```{r,echo=TRUE}
+library(lattice)
+dataavgstepsperdaytype<-aggregate(actdataFilled$steps~actdataFilled$interval+actdataFilled$DayType,actdataFilled,FUN=mean,na.rm=TRUE)
+names(dataavgstepsperdaytype)<-c("Interval","DayType","Steps")
+xyplot(Steps~Interval|DayType,data=dataavgstepsperdaytype,type="l",
+       layout=c(1,2))
+```
