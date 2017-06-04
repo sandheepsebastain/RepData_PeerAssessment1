@@ -35,7 +35,7 @@ print(head(datatotalstepsperday))
 histdata=hist(datatotalstepsperday$Total_Steps_Day,xlab = "Total Steps per day",main = "Histogram Total Steps Per day (missing data)", col="red")
 ```
 
-3.1 The mean and median total number of steps each day
+3 The mean and median total number of steps each day
 
 ```{r meantotnostepsperday,echo=TRUE}
 dataavgstepsperday<-aggregate(actdata$steps,by=list(actdata$date),FUN=mean,na.rm = TRUE)
