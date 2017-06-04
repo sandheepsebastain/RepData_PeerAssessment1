@@ -35,24 +35,18 @@ print(head(datatotalstepsperday))
 histdata=hist(datatotalstepsperday$Total_Steps_Day,xlab = "Total Steps per day",main = "Histogram Total Steps Per day (missing data)", col="red")
 ```
 
-3.1 The mean total number of steps each day
+3.1 The mean and median total number of steps each day
 
 ```{r meantotnostepsperday,echo=TRUE}
 dataavgstepsperday<-aggregate(actdata$steps,by=list(actdata$date),FUN=mean,na.rm = TRUE)
 names(dataavgstepsperday)<-c("date","Avg_Steps_Day")
 meantotstepsperday<-as.integer(mean(datatotalstepsperday$Total_Steps_Day,na.rm = TRUE))
-print(dataavgstepsperday)
+mediantotstepsperday<-as.integer(median(datatotalstepsperday$Total_Steps_Day,na.rm = TRUE))
 ```
 
-3.2 The median total number of steps each day
-
-```{r mediantotnostepsperday,echo=TRUE}
-datamedianstepsperday<-aggregate(actdata$steps,by=list(actdata$date),FUN=median,na.rm = TRUE)
-names(datamedianstepsperday)<-c("date","Median_Steps_Day")
-print(datamedianstepsperday)
-```
 
 The mean total number of steps per day through the entire dataset is `r meantotstepsperday`.
+The median total number of steps per day through the entire dataset is `r mediantotstepsperday`.
 
 
 ## What is the average daily activity pattern?
@@ -60,8 +54,8 @@ The mean total number of steps per day through the entire dataset is `r meantots
 ```{r avgstepstakenperinterval,echo=TRUE}
 dataavgstepsperinterval<-aggregate(actdata$steps,by=list(actdata$interval),FUN=mean,na.rm=TRUE)
 names(dataavgstepsperinterval)<-c("Interval","Avg_Steps_Interval")
-maxinterval<-dataavgstepsperinterval$Interval[apply(dataavgstepsperinterval,2,which.max)][1]
-maxintervalvalue=dataavgstepsperinterval$Interval[apply(dataavgstepsperinterval,2,which.max)][2]
+maxinterval<-dataavgstepsperinterval[which.max(dataavgstepsperinterval$Avg_Steps_Interval),"Interval"]
+maxintervalvalue<-dataavgstepsperinterval[which.max(dataavgstepsperinterval$Avg_Steps_Interval),"Avg_Steps_Interval"]
 
 plot(dataavgstepsperinterval,type="l",xlab="5 minute intervals", ylab="Avergage no. of steps",main="Average daily 
      activity pattern",col="red")
